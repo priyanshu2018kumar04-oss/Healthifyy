@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Healthify AI — Your Personal Health Agent</title>
+  <meta name="description" content="AI-powered personal health monitoring and planning. Get personalized diet plans, workout routines, and health insights powered by Groq AI.">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .auth-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 960px;
+      width: 100%;
+      gap: 0;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      backdrop-filter: blur(30px);
+      box-shadow: 0 25px 80px rgba(0,0,0,0.6);
+    }
+    .auth-hero {
+      background: linear-gradient(160deg, rgba(124,58,237,0.3) 0%, rgba(6,182,212,0.2) 100%);
+      padding: 48px 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+      overflow: hidden;
+      border-right: 1px solid var(--border);
+    }
+    .auth-hero::before {
+      content: '';
+      position: absolute;
+      width: 300px; height: 300px;
+      background: var(--primary);
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.15;
+      top: -100px; right: -100px;
+    }
+    .auth-hero::after {
+      content: '';
+      position: absolute;
+      width: 200px; height: 200px;
+      background: var(--secondary);
+      border-radius: 50%;
+      filter: blur(60px);
+      opacity: 0.12;
+      bottom: -60px; left: -60px;
+    }
+    .hero-logo {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 36px;
+      font-weight: 900;
+      background: var(--grad-brand);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 12px;
+    }
+    .hero-tagline { font-size: 18px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+    .hero-sub { color: var(--text-secondary); font-size: 14px; line-height: 1.7; }
+    .feature-list { margin-top: 32px; display: flex; flex-direction: column; gap: 14px; }
+    .feature-item {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 14px; color: var(--text-secondary);
+    }
+    .feature-icon {
+      width: 36px; height: 36px;
+      background: rgba(124,58,237,0.15);
+      border: 1px solid rgba(124,58,237,0.25);
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px; flex-shrink: 0;
+    }
+
+    .auth-form-panel { padding: 48px 40px; }
+    .auth-tabs {
+      display: flex;
+      background: rgba(255,255,255,0.04);
+      border-radius: var(--radius-md);
+      padding: 4px;
+      margin-bottom: 32px;
+      border: 1px solid var(--border);
+    }
+    .auth-tab {
+      flex: 1; padding: 10px; text-align: center;
+      border-radius: calc(var(--radius-md) - 2px);
+      font-weight: 600; font-size: 14px;
+      border: none; background: transparent;
+      color: var(--text-muted); cursor: pointer;
+      font-family: inherit;
+      transition: all var(--duration) var(--ease);
+    }
+    .auth-tab.active {
+      background: var(--grad-brand); color: #fff;
+      box-shadow: 0 2px 10px rgba(124,58,237,0.4);
+    }
+    .auth-form { display: none; }
+    .auth-form.active { display: flex; flex-direction: column; gap: 16px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .divider-text {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+      position: relative;
+    }
+    .divider-text::before, .divider-text::after {
+      content: '';
+      position: absolute;
+      top: 50%; height: 1px;
+      background: var(--border);
+      width: 40%;
+    }
+    .divider-text::before { left: 0; }
+    .divider-text::after  { right: 0; }
+
+    @media (max-width: 768px) {
+      .auth-container { grid-template-columns: 1fr; }
+      .auth-hero { display: none; }
+      .auth-form-panel { padding: 32px 24px; }
+      .form-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <!-- Animated Background -->
+  <div class="animated-bg">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="auth-page">
+    <div class="auth-container">
+      <!-- Hero Panel -->
+      <div class="auth-hero">
+        <div class="hero-logo">🏥 Healthify</div>
+        <div class="hero-tagline">Your AI-Powered Health Agent</div>
+        <p class="hero-sub">Personalized diet plans, workout routines, and real-time health monitoring — all powered by advanced AI.</p>
+        <div class="feature-list">
+          <div class="feature-item">
+            <div class="feature-icon">🤖</div>
+            <span>AI diet & workout plans via Groq LLaMA 3.3</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">📊</div>
+            <span>Real-time health risk warnings & BMI tracking</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">💬</div>
+            <span>Email & WhatsApp health alerts & weekly reports</span>
+          </div>
+          <div class="feature-item">
+            <div class="feature-icon">🎯</div>
+            <span>Goal-based plans: fat loss, muscle gain & more</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Auth Form Panel -->
+      <div class="auth-form-panel">
+        <h2 style="margin-bottom:4px">Welcome</h2>
+        <p style="color:var(--text-muted);font-size:14px;margin-bottom:24px">Sign in or create your free account</p>
+
+        <!-- Tab Switch -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" onclick="switchTab('login')" id="tab-login">Sign In</button>
+          <button class="auth-tab" onclick="switchTab('register')" id="tab-register">Create Account</button>
+        </div>
+
+        <!-- Login Form -->
+        <form class="auth-form active" id="login-form" onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="login-email" class="form-control" placeholder="your@email.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="login-password" class="form-control" placeholder="••••••••" required>
+          </div>
+          <div id="login-error" class="form-error"></div>
+          <button type="submit" class="btn btn-primary btn-full btn-lg" id="login-btn">
+            <span id="login-btn-text">Sign In →</span>
+          </button>
+        </form>
+
+        <!-- Register Form -->
+        <form class="auth-form" id="register-form" onsubmit="handleRegister(event)">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input type="text" id="reg-name" class="form-control" placeholder="John Doe" required minlength="2">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Age (years)</label>
+              <input type="number" id="reg-age" class="form-control" placeholder="25" required min="10" max="120">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Gender</label>
+              <select id="reg-gender" class="form-control" required>
+                <option value="">Select...</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Height (cm)</label>
+              <input type="number" id="reg-height" class="form-control" placeholder="170" required min="100" max="250">
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input type="email" id="reg-email" class="form-control" placeholder="your@email.com" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input type="password" id="reg-password" class="form-control" placeholder="Minimum 6 characters" required minlength="6">
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">WhatsApp Number <span style="color:var(--text-muted)">(optional)</span></label>
+              <input type="tel" id="reg-phone" class="form-control" placeholder="+91 98765 43210">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Activity Level</label>
+              <select id="reg-activity" class="form-control">
+                <option value="sedentary">Sedentary (desk job)</option>
+                <option value="light">Light (1-3 days/wk)</option>
+                <option value="moderate" selected>Moderate (3-5 days/wk)</option>
+                <option value="active">Active (6-7 days/wk)</option>
+                <option value="very_active">Very Active (hard training)</option>
+              </select>
+            </div>
+          </div>
+          <div id="reg-error" class="form-error"></div>
+          <button type="submit" class="btn btn-primary btn-full btn-lg" id="reg-btn">
+            <span id="reg-btn-text">Create Account →</span>
+          </button>
+          <p style="font-size:12px;color:var(--text-muted);text-align:center">
+            By registering, you agree that this is an AI health assistant and not a substitute for medical advice.
+          </p>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+  <script src="js/api.js"></script>
+  <script>
+    // Redirect if already logged in
+    if (isAuthenticated()) window.location.href = 'dashboard.html';
+
+    function switchTab(tab) {
+      document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+      document.getElementById(`tab-${tab}`).classList.add('active');
+      document.getElementById(`${tab}-form`).classList.add('active');
+    }
+
+    async function handleLogin(e) {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const btnText = document.getElementById('login-btn-text');
+      const errEl = document.getElementById('login-error');
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btnText.innerHTML = '<div class="spinner spinner-sm" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;display:inline-block"></div> Signing in...';
+
+      try {
+        await AuthAPI.login(
+          document.getElementById('login-email').value,
+          document.getElementById('login-password').value
+        );
+        showToast('Welcome back! Redirecting...', 'success');
+        setTimeout(() => window.location.href = 'dashboard.html', 800);
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btnText.textContent = 'Sign In →';
+      }
+    }
+
+    async function handleRegister(e) {
+      e.preventDefault();
+      const btn = document.getElementById('reg-btn');
+      const btnText = document.getElementById('reg-btn-text');
+      const errEl = document.getElementById('reg-error');
+      errEl.style.display = 'none';
+      btn.disabled = true;
+      btnText.innerHTML = '<div class="spinner spinner-sm" style="border-color:rgba(255,255,255,.3);border-top-color:#fff;display:inline-block"></div> Creating account...';
+
+      const phone = document.getElementById('reg-phone').value.trim();
+      const payload = {
+        name: document.getElementById('reg-name').value.trim(),
+        age: parseInt(document.getElementById('reg-age').value),
+        gender: document.getElementById('reg-gender').value,
+        email: document.getElementById('reg-email').value.trim(),
+        password: document.getElementById('reg-password').value,
+        height_cm: parseFloat(document.getElementById('reg-height').value),
+        activity_level: document.getElementById('reg-activity').value,
+        ...(phone ? { phone } : {}),
+      };
+
+      try {
+        await AuthAPI.register(payload);
+        showToast('Account created! Let\'s set up your health profile.', 'success');
+        setTimeout(() => window.location.href = 'health-input.html', 1000);
+      } catch (err) {
+        errEl.textContent = err.message;
+        errEl.style.display = 'block';
+        btn.disabled = false;
+        btnText.textContent = 'Create Account →';
+      }
+    }
+  </script>
+</body>
+</html>

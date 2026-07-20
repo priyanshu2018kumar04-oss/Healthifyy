@@ -1,0 +1,6 @@
+# LangGraph + Groq AI Agent dependencies
+langchain-groq>=0.1.9
+langgraph>=0.2.4
+langchain>=0.2.12,<0.4.0
+langchain-core>=0.2.26,<0.4.0
+python-dotenv>=1.0.1

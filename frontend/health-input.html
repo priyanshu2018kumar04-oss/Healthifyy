@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log Health Data — Healthify AI</title>
+  <meta name="description" content="Log your body weight, blood glucose, blood pressure and health goals for AI-powered personalized health planning.">
+  <link rel="stylesheet" href="css/main.css">
+  <style>
+    .wizard-container { max-width: 720px; margin: 0 auto; }
+    .step-panel { display: none; animation: fadeIn 0.3s ease; }
+    .step-panel.active { display: block; }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+    .input-with-unit {
+      display: flex; gap: 0;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: rgba(255,255,255,0.05);
+      transition: border-color 200ms;
+    }
+    .input-with-unit:focus-within { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(124,58,237,0.15); }
+    .input-with-unit input {
+      flex: 1; padding: 12px 16px;
+      background: transparent;
+      border: none;
+      color: var(--text-primary);
+      font-size: 15px;
+      font-family: inherit;
+      outline: none;
+    }
+    .input-unit-panel { display: flex; border-left: 1px solid var(--border); }
+    .unit-opt {
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all 200ms;
+    }
+    .unit-opt.active { background: var(--primary); color: #fff; }
+    .unit-opt:hover:not(.active) { background: rgba(255,255,255,0.06); color: var(--text-primary); }
+    .unit-opt + .unit-opt { border-left: 1px solid var(--border); }
+
+    .goal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .goal-card {
+      padding: 20px;
+      background: var(--bg-card);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 200ms;
+      text-align: center;
+    }
+    .goal-card:hover { border-color: var(--primary); background: rgba(124,58,237,0.08); }
+    .goal-card.selected { border-color: var(--primary); background: rgba(124,58,237,0.12); }
+    .goal-card .goal-icon { font-size: 32px; margin-bottom: 8px; }
+    .goal-card .goal-name { font-weight: 700; font-size: 15px; color: var(--text-primary); }
+    .goal-card .goal-desc { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+    .goal-card .goal-rec {
+      margin-top: 8px;
+      background: rgba(16,185,129,0.1);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: 99px;
+      padding: 3px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+      display: inline-block;
+    }
+
+    .optional-badge {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 2px 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .range-display {
+      padding: 8px 16px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+    .nav-buttons { display: flex; gap: 12px; margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <div class="animated-bg"><div class="orb orb-1"></div><div class="orb orb-2"></div></div>
+
+  <!-- Sidebar -->
+  <nav class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">🏥 Healthify</div>
+      <div class="logo-sub">AI Health Agent</div>
+    </div>
+    <a href="dashboard.html"    class="nav-item"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="health-input.html" class="nav-item active"><span class="nav-icon">📝</span> Log Health Data</a>
+    <a href="plan.html"         class="nav-item"><span class="nav-icon">🤖</span> AI Health Plan</a>
+    <a href="progress.html"     class="nav-item"><span class="nav-icon">📈</span> Weekly Progress</a>
+    <div style="flex:1"></div>
+    <div class="nav-item" onclick="AuthAPI.logout()" style="cursor:pointer;color:var(--danger)">
+      <span class="nav-icon">🚪</span> Logout
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Log Health Data</h1>
+        <p class="page-subtitle">Enter your current health metrics to get your AI-generated plan</p>
+      </div>
+    </div>
+
+    <div class="wizard-container">
+      <!-- Step Progress -->
+      <div class="wizard-steps">
+        <div class="step active" id="step-dot-1">
+          <div class="step-dot">1</div>
+          <div class="step-label">Body Metrics</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step" id="step-dot-2">
+          <div class="step-dot">2</div>
+          <div class="step-label">Blood Tests</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step" id="step-dot-3">
+          <div class="step-dot">3</div>
+          <div class="step-label">Optional Tests</div>
+        </div>
+        <div class="step-connector"></div>
+        <div class="step" id="step-dot-4">
+          <div class="step-dot">4</div>
+          <div class="step-label">Your Goal</div>
+        </div>
+      </div>
+
+      <!-- Step 1: Body Metrics -->
+      <div class="card step-panel active" id="panel-1">
+        <h3 style="margin-bottom:4px">⚖️ Body Metrics</h3>
+        <p style="margin-bottom:24px;font-size:14px">Enter your current body weight. We'll automatically convert to kg.</p>
+
+        <div class="form-group" style="margin-bottom:20px">
+          <label class="form-label">Body Weight</label>
+          <div class="input-with-unit">
+            <input type="number" id="weight-val" placeholder="Enter your weight" step="0.1" min="1">
+            <div class="input-unit-panel">
+              <button class="unit-opt active" onclick="setWeightUnit('kg',this)">kg</button>
+              <button class="unit-opt" onclick="setWeightUnit('lbs',this)">lbs</button>
+              <button class="unit-opt" onclick="setWeightUnit('stone',this)">stone</button>
+            </div>
+          </div>
+          <span class="form-hint" id="weight-hint">E.g. 70 kg is considered normal for many adults</span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Notes <span class="optional-badge">optional</span></label>
+          <input type="text" id="health-notes" class="form-control" placeholder="e.g. measured after breakfast, feeling tired...">
+        </div>
+
+        <div class="nav-buttons">
+          <button class="btn btn-primary" onclick="nextStep(2)">Next: Blood Tests →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Blood Tests -->
+      <div class="card step-panel" id="panel-2">
+        <h3 style="margin-bottom:4px">🩸 Blood Tests</h3>
+        <p style="margin-bottom:24px;font-size:14px">Enter your fasting blood glucose level. This is typically measured in the morning before eating.</p>
+
+        <div class="form-group" style="margin-bottom:20px">
+          <label class="form-label">Fasting Blood Glucose</label>
+          <div class="input-with-unit">
+            <input type="number" id="glucose-val" placeholder="Enter glucose level" step="0.1" min="0.1">
+            <div class="input-unit-panel">
+              <button class="unit-opt active" onclick="setGlucoseUnit('mmol/L',this)">mmol/L</button>
+              <button class="unit-opt" onclick="setGlucoseUnit('mg/dL',this)">mg/dL</button>
+            </div>
+          </div>
+          <div class="range-display mt-sm">
+            📊 Normal range: <strong>3.9–5.5 mmol/L</strong> (70–99 mg/dL) · Pre-diabetic: 5.6–6.9 · Diabetic: ≥7.0
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:20px">
+          <label class="form-label">After-Meal Blood Glucose <span class="optional-badge">optional</span></label>
+          <p style="font-size:13px;color:var(--text-muted);margin-bottom:10px">Measured 2 hours after eating — helps detect sugar spikes</p>
+          <div class="input-with-unit">
+            <input type="number" id="after-meal-val" placeholder="Post-meal glucose (optional)" step="0.1" min="0">
+            <div class="input-unit-panel">
+              <button class="unit-opt active" onclick="setAfterMealUnit('mmol/L',this)">mmol/L</button>
+              <button class="unit-opt" onclick="setAfterMealUnit('mg/dL',this)">mg/dL</button>
+            </div>
+          </div>
+          <div class="range-display mt-sm">
+            📊 Normal: <strong>&lt;7.8 mmol/L</strong> · Elevated: 7.8–11.0 · High: ≥11.1
+          </div>
+        </div>
+
+        <div class="nav-buttons">
+          <button class="btn btn-secondary" onclick="nextStep(1)">← Back</button>
+          <button class="btn btn-primary" onclick="nextStep(3)">Next: Optional Tests →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Optional Tests -->
+      <div class="card step-panel" id="panel-3">
+        <h3 style="margin-bottom:4px">🏥 Optional Health Tests</h3>
+        <p style="margin-bottom:24px;font-size:14px">These are optional but help the AI provide more accurate and personalized recommendations.</p>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px">
+          <div class="form-group">
+            <label class="form-label">Systolic BP <span class="optional-badge">optional</span></label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="number" id="bp-sys" class="form-control" placeholder="e.g. 120" min="60" max="250">
+              <span style="color:var(--text-muted);font-size:18px;font-weight:300">mmHg</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Diastolic BP <span class="optional-badge">optional</span></label>
+            <div style="display:flex;gap:8px;align-items:center">
+              <input type="number" id="bp-dia" class="form-control" placeholder="e.g. 80" min="40" max="150">
+              <span style="color:var(--text-muted);font-size:18px;font-weight:300">mmHg</span>
+            </div>
+          </div>
+        </div>
+        <div class="range-display" style="margin-bottom:20px">
+          ❤️ BP Reference: Normal <strong>&lt;120/80</strong> · Elevated 120-129/&lt;80 · Hypertension ≥130/80 mmHg
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Total Cholesterol <span class="optional-badge">optional</span></label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input type="number" id="cholesterol-val" class="form-control" placeholder="e.g. 180" min="0">
+            <span style="color:var(--text-muted);font-weight:600;white-space:nowrap">mg/dL</span>
+          </div>
+          <div class="range-display mt-sm">
+            🩸 Reference: Desirable <strong>&lt;200</strong> · Borderline 200-239 · High ≥240 mg/dL
+          </div>
+        </div>
+
+        <div class="nav-buttons">
+          <button class="btn btn-secondary" onclick="nextStep(2)">← Back</button>
+          <button class="btn btn-primary" onclick="nextStep(4)">Next: Set Your Goal →</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Goal Selection -->
+      <div class="card step-panel" id="panel-4">
+        <h3 style="margin-bottom:4px">🎯 What's Your Health Goal?</h3>
+        <p style="margin-bottom:8px;font-size:14px">Choose your primary goal — the AI will customize your diet and workout plan accordingly.</p>
+        <div id="bmi-recommendation" style="margin-bottom:20px"></div>
+
+        <div class="goal-grid" id="goal-grid">
+          <div class="goal-card" onclick="selectGoal('fat_loss')" id="goal-fat_loss" data-goal="fat_loss">
+            <div class="goal-icon">🔥</div>
+            <div class="goal-name">Fat Loss</div>
+            <div class="goal-desc">Calorie deficit, high protein diet, cardio-focused workout to burn fat</div>
+          </div>
+          <div class="goal-card" onclick="selectGoal('weight_gain')" id="goal-weight_gain" data-goal="weight_gain">
+            <div class="goal-icon">📈</div>
+            <div class="goal-name">Weight Gain</div>
+            <div class="goal-desc">Calorie surplus, nutrient-dense foods, strength training for healthy weight gain</div>
+          </div>
+          <div class="goal-card" onclick="selectGoal('bodybuilding')" id="goal-bodybuilding" data-goal="bodybuilding">
+            <div class="goal-icon">💪</div>
+            <div class="goal-name">Bodybuilding</div>
+            <div class="goal-desc">Very high protein, timed carbs around workouts, hypertrophy training</div>
+          </div>
+          <div class="goal-card" onclick="selectGoal('maintain')" id="goal-maintain" data-goal="maintain">
+            <div class="goal-icon">⚖️</div>
+            <div class="goal-name">Maintain & Balance</div>
+            <div class="goal-desc">Balanced macros, all nutrients, moderate exercise for overall wellness</div>
+          </div>
+        </div>
+
+        <div id="goal-error" class="form-error visible" style="display:none">Please select a goal to continue.</div>
+
+        <div class="form-group" style="margin-top:20px">
+          <label class="form-label">Target Weight (kg) <span class="optional-badge">optional</span></label>
+          <input type="number" id="target-weight" class="form-control" placeholder="e.g. 70" min="30" max="200" step="0.5">
+        </div>
+
+        <div class="nav-buttons">
+          <button class="btn btn-secondary" onclick="nextStep(3)">← Back</button>
+          <button class="btn btn-primary btn-lg" onclick="submitHealthData()" id="submit-btn">
+            ✅ Save & Generate AI Plan
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+  <div id="loading-overlay" class="loading-overlay"><div class="spinner"></div><p class="loading-text" id="loading-text">Saving...</p></div>
+  <script src="js/api.js"></script>
+  <script>
+    requireAuth();
+
+    let currentStep = 1;
+    let weightUnit = 'kg';
+    let glucoseUnit = 'mmol/L';
+    let afterMealUnit = 'mmol/L';
+    let selectedGoal = null;
+
+    function setWeightUnit(unit, btn) {
+      weightUnit = unit;
+      document.querySelectorAll('#panel-1 .unit-opt').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    function setGlucoseUnit(unit, btn) {
+      glucoseUnit = unit;
+      document.querySelectorAll('#panel-2 .input-unit-panel:first-of-type .unit-opt').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    function setAfterMealUnit(unit, btn) {
+      afterMealUnit = unit;
+      const parent = btn.closest('.input-unit-panel');
+      parent.querySelectorAll('.unit-opt').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function nextStep(n) {
+      if (n > currentStep) {
+        // Validate current step
+        if (currentStep === 1) {
+          const wv = parseFloat(document.getElementById('weight-val').value);
+          if (!wv || wv <= 0) { showToast('Please enter your body weight', 'warning'); return; }
+        }
+        if (currentStep === 2) {
+          const gv = parseFloat(document.getElementById('glucose-val').value);
+          if (!gv || gv <= 0) { showToast('Please enter your blood glucose level', 'warning'); return; }
+        }
+      }
+
+      // Mark steps done/active
+      for (let i = 1; i <= 4; i++) {
+        const dot = document.getElementById(`step-dot-${i}`);
+        dot.classList.remove('active','done');
+        if (i < n) dot.classList.add('done');
+        else if (i === n) dot.classList.add('active');
+      }
+
+      document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+      document.getElementById(`panel-${n}`).classList.add('active');
+      currentStep = n;
+
+      if (n === 4) computeBMIRecommendation();
+    }
+
+    function computeBMIRecommendation() {
+      const wv = parseFloat(document.getElementById('weight-val').value) || 0;
+      const user = getUser();
+      if (!user || !user.height_cm || !wv) return;
+      const wKg = weightUnit === 'lbs' ? wv * 0.453592 : weightUnit === 'stone' ? wv * 6.35029 : wv;
+      const hM = user.height_cm / 100;
+      const bmi = wKg / (hM * hM);
+      const bmiRound = bmi.toFixed(1);
+      let rec, label;
+      if (bmi < 18.5) { rec = 'weight_gain'; label = 'Weight Gain (underweight detected)'; }
+      else if (bmi < 25) { rec = 'maintain'; label = 'Maintain & Balance (healthy weight)'; }
+      else { rec = 'fat_loss'; label = 'Fat Loss (overweight detected)'; }
+
+      document.getElementById('bmi-recommendation').innerHTML = `
+        <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:14px;font-size:14px">
+          🤖 <strong>AI Recommendation:</strong> Based on your BMI of <strong>${bmiRound}</strong>, we suggest <strong>${label}</strong>
+        </div>`;
+
+      // Auto-select recommended goal
+      document.querySelectorAll('.goal-card [data-goal="${rec}"]');
+      const recCard = document.querySelector(`[data-goal="${rec}"]`);
+      if (recCard) {
+        const span = recCard.querySelector('.goal-rec') || document.createElement('div');
+        span.className = 'goal-rec';
+        span.textContent = '⭐ AI Recommended';
+        if (!recCard.querySelector('.goal-rec')) recCard.appendChild(span);
+      }
+    }
+
+    function selectGoal(goal) {
+      selectedGoal = goal;
+      document.querySelectorAll('.goal-card').forEach(c => c.classList.remove('selected'));
+      document.getElementById(`goal-${goal}`).classList.add('selected');
+    }
+
+    async function submitHealthData() {
+      if (!selectedGoal) { showToast('Please select your health goal', 'warning'); return; }
+
+      const wv  = parseFloat(document.getElementById('weight-val').value);
+      const gv  = parseFloat(document.getElementById('glucose-val').value);
+      if (!wv || !gv) { showToast('Weight and glucose are required', 'warning'); return; }
+
+      const amv = parseFloat(document.getElementById('after-meal-val').value) || null;
+      const bpS = parseInt(document.getElementById('bp-sys').value) || null;
+      const bpD = parseInt(document.getElementById('bp-dia').value) || null;
+      const chol = parseFloat(document.getElementById('cholesterol-val').value) || null;
+      const tw   = parseFloat(document.getElementById('target-weight').value) || null;
+
+      showLoading('Saving your health data...');
+      try {
+        // Save health log
+        await HealthAPI.logHealth({
+          weight_value: wv,
+          weight_unit: weightUnit,
+          blood_glucose_value: gv,
+          glucose_unit: glucoseUnit,
+          blood_pressure_sys: bpS,
+          blood_pressure_dia: bpD,
+          cholesterol_mgdl: chol,
+          ...(amv ? { after_meal_glucose_value: amv, after_meal_glucose_unit: afterMealUnit } : {}),
+          notes: document.getElementById('health-notes').value || null,
+        });
+
+        // Save goal
+        await HealthAPI.setGoal({
+          goal_type: selectedGoal,
+          ...(tw ? { target_weight_kg: tw } : {}),
+        });
+
+        showLoading('Data saved! Redirecting to generate your AI plan...');
+        setTimeout(() => { hideLoading(); window.location.href = 'plan.html'; }, 1200);
+      } catch (err) {
+        hideLoading();
+        showToast(err.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>

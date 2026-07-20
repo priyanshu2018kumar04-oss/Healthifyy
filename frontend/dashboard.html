@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Healthify AI</title>
+  <meta name="description" content="Your personal health dashboard with AI insights, BMI tracking, glucose monitoring, and wellness alerts.">
+  <link rel="stylesheet" href="css/main.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+      transition: all 200ms;
+    }
+    .stat-card::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--accent-color, var(--grad-brand));
+    }
+    .stat-card:hover { transform: translateY(-2px); border-color: var(--border-bright); }
+    .stat-icon { font-size: 26px; margin-bottom: 8px; }
+    .stat-label { font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .stat-value { font-size: 28px; font-weight: 900; font-family: 'Space Grotesk', sans-serif; margin: 4px 0; }
+    .stat-sub { font-size: 13px; color: var(--text-secondary); }
+
+    .dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 24px; }
+    .quick-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .action-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 200ms;
+    }
+    .action-card:hover { border-color: var(--primary); background: rgba(124,58,237,0.08); transform: translateY(-1px); }
+    .action-card .action-icon { font-size: 28px; }
+    .action-card .action-title { font-weight: 700; color: var(--text-primary); font-size: 15px; }
+    .action-card .action-desc { font-size: 13px; color: var(--text-muted); }
+
+    .warnings-section { margin-bottom: 20px; }
+    .no-warnings {
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.2);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--accent);
+      font-weight: 600;
+    }
+    .chart-container { position: relative; height: 200px; }
+    .user-info-bar {
+      display: flex; align-items: center; gap: 16px;
+      padding: 16px 24px;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border);
+      margin: -32px -32px 32px;
+      position: sticky; top: 0; z-index: 50;
+    }
+    .user-avatar {
+      width: 40px; height: 40px;
+      background: var(--grad-brand);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 800; font-size: 16px; color: #fff;
+    }
+    @media (max-width: 1100px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 768px)  { .dashboard-grid { grid-template-columns: 1fr; } .quick-actions { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="animated-bg"><div class="orb orb-1"></div><div class="orb orb-2"></div></div>
+
+  <!-- Sidebar -->
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">🏥 Healthify</div>
+      <div class="logo-sub">AI Health Agent</div>
+    </div>
+    <a href="dashboard.html"     class="nav-item active"><span class="nav-icon">📊</span> Dashboard</a>
+    <a href="health-input.html"  class="nav-item"><span class="nav-icon">📝</span> Log Health Data</a>
+    <a href="plan.html"          class="nav-item"><span class="nav-icon">🤖</span> AI Health Plan</a>
+    <a href="progress.html"      class="nav-item"><span class="nav-icon">📈</span> Weekly Progress</a>
+    <div style="flex:1"></div>
+    <div class="nav-item" onclick="AuthAPI.logout()" style="cursor:pointer;color:var(--danger)">
+      <span class="nav-icon">🚪</span> Logout
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Top User Bar -->
+    <div class="user-info-bar">
+      <div class="user-avatar" id="user-initials">?</div>
+      <div>
+        <div style="font-weight:700;font-size:15px" id="user-name-display">Loading...</div>
+        <div style="font-size:12px;color:var(--text-muted)" id="user-meta">Goal: — | BMI: —</div>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <a href="health-input.html" class="btn btn-primary btn-sm">+ Log Data</a>
+        <a href="plan.html" class="btn btn-secondary btn-sm">Generate Plan</a>
+      </div>
+    </div>
+
+    <!-- Page Header -->
+    <div class="page-header">
+      <div>
+        <h1 class="page-title">Health Dashboard</h1>
+        <p class="page-subtitle">Your real-time health overview and AI insights</p>
+      </div>
+      <div style="font-size:13px;color:var(--text-muted)" id="last-updated">—</div>
+    </div>
+
+    <!-- Warnings Section -->
+    <div class="warnings-section" id="warnings-section">
+      <div class="no-warnings">
+        <span style="font-size:24px">✅</span>
+        <span>Loading health status...</span>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid" id="stats-grid">
+      <div class="stat-card" style="--accent-color: linear-gradient(90deg,#7c3aed,#9d5bf5)">
+        <div class="stat-icon">⚖️</div>
+        <div class="stat-label">BMI</div>
+        <div class="stat-value" id="stat-bmi">—</div>
+        <div class="stat-sub" id="stat-bmi-cat">—</div>
+      </div>
+      <div class="stat-card" style="--accent-color: linear-gradient(90deg,#06b6d4,#67e8f9)">
+        <div class="stat-icon">🩸</div>
+        <div class="stat-label">Blood Glucose</div>
+        <div class="stat-value" id="stat-glucose">—</div>
+        <div class="stat-sub">mmol/L fasting</div>
+      </div>
+      <div class="stat-card" style="--accent-color: linear-gradient(90deg,#ef4444,#f87171)">
+        <div class="stat-icon">❤️</div>
+        <div class="stat-label">Blood Pressure</div>
+        <div class="stat-value" id="stat-bp" style="font-size:20px">—</div>
+        <div class="stat-sub">mmHg</div>
+      </div>
+      <div class="stat-card" style="--accent-color: linear-gradient(90deg,#10b981,#34d399)">
+        <div class="stat-icon">🏋️</div>
+        <div class="stat-label">Current Weight</div>
+        <div class="stat-value" id="stat-weight">—</div>
+        <div class="stat-sub" id="stat-weight-goal">—</div>
+      </div>
+    </div>
+
+    <!-- Dashboard Grid -->
+    <div class="dashboard-grid">
+      <!-- Trend Chart -->
+      <div class="card">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+          <h3>Health Trends</h3>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-sm btn-secondary" onclick="loadChart('weight')">Weight</button>
+            <button class="btn btn-sm btn-secondary" onclick="loadChart('glucose')">Glucose</button>
+          </div>
+        </div>
+        <div class="chart-container">
+          <canvas id="trend-chart"></canvas>
+        </div>
+      </div>
+
+      <!-- Stats Summary -->
+      <div class="card">
+        <h3 style="margin-bottom:16px">Your Stats</h3>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(124,58,237,0.08);border-radius:8px;border:1px solid rgba(124,58,237,0.15)">
+            <span style="font-size:13px;color:var(--text-secondary)">📋 Health Logs</span>
+            <span style="font-weight:800;color:var(--primary-lt)" id="count-logs">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(6,182,212,0.08);border-radius:8px;border:1px solid rgba(6,182,212,0.15)">
+            <span style="font-size:13px;color:var(--text-secondary)">🤖 Plans Generated</span>
+            <span style="font-weight:800;color:var(--secondary)" id="count-plans">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(16,185,129,0.08);border-radius:8px;border:1px solid rgba(16,185,129,0.15)">
+            <span style="font-size:13px;color:var(--text-secondary)">📊 Weekly Reports</span>
+            <span style="font-weight:800;color:var(--accent)" id="count-reports">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;background:rgba(245,158,11,0.08);border-radius:8px;border:1px solid rgba(245,158,11,0.15)">
+            <span style="font-size:13px;color:var(--text-secondary)">🏆 Health Score</span>
+            <span style="font-weight:800;color:var(--warning)" id="health-score">—</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <h3 style="margin-bottom:16px">Quick Actions</h3>
+    <div class="quick-actions">
+      <a href="health-input.html" class="action-card">
+        <div class="action-icon">📝</div>
+        <div class="action-title">Log Today's Health Data</div>
+        <div class="action-desc">Record weight, blood glucose, BP, and more</div>
+      </a>
+      <a href="plan.html" class="action-card">
+        <div class="action-icon">🤖</div>
+        <div class="action-title">Generate AI Health Plan</div>
+        <div class="action-desc">Get personalized diet + workout plans from Groq AI</div>
+      </a>
+      <a href="progress.html" class="action-card">
+        <div class="action-icon">📊</div>
+        <div class="action-title">View Weekly Progress</div>
+        <div class="action-desc">See your health journey and AI recommendations</div>
+      </a>
+      <div class="action-card" onclick="triggerWeeklyReport()">
+        <div class="action-icon">📧</div>
+        <div class="action-title">Send Weekly Report</div>
+        <div class="action-desc">Generate and email your weekly health summary</div>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+  <div id="loading-overlay" class="loading-overlay"><div class="spinner"></div><p class="loading-text" id="loading-text">Loading...</p></div>
+  <script src="js/api.js"></script>
+  <script>
+    let trendChart = null;
+    let trendData = null;
+
+    requireAuth();
+
+    async function initDashboard() {
+      const user = getUser();
+      if (user) {
+        const initials = user.name.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase();
+        document.getElementById('user-initials').textContent = initials;
+        document.getElementById('user-name-display').textContent = `Hello, ${user.name}! 👋`;
+      }
+
+      await Promise.all([loadHealthSummary(), loadStats(), loadTrendData()]);
+    }
+
+    async function loadHealthSummary() {
+      try {
+        const summary = await HealthAPI.getSummary();
+        const goal = await HealthAPI.getGoal().catch(() => null);
+        const bmi = summary.bmi;
+
+        document.getElementById('stat-bmi').textContent = bmi;
+        document.getElementById('stat-bmi').style.color = getBMIColor(bmi);
+        document.getElementById('stat-bmi-cat').textContent = summary.bmi_category;
+        document.getElementById('stat-glucose').textContent = summary.blood_glucose_mmol?.toFixed(1) || '—';
+        document.getElementById('stat-glucose').style.color = getGlucoseColor(summary.blood_glucose_mmol);
+        document.getElementById('stat-bp').textContent = summary.blood_pressure || 'Not logged';
+        document.getElementById('stat-weight').textContent = `${summary.weight_kg} kg`;
+        document.getElementById('last-updated').textContent = `Last updated: ${formatDate(summary.logged_at)}`;
+
+        if (goal) {
+          const goalLabels = { fat_loss:'Fat Loss', weight_gain:'Weight Gain', bodybuilding:'Bodybuilding', maintain:'Maintain' };
+          document.getElementById('stat-weight-goal').textContent = `Goal: ${goalLabels[goal.goal_type] || goal.goal_type}`;
+          document.getElementById('user-meta').textContent = `Goal: ${goalLabels[goal.goal_type]} | BMI: ${bmi} (${summary.bmi_category})`;
+        }
+
+        renderWarnings(summary);
+      } catch (err) {
+        if (err.message.includes('No health data')) {
+          document.getElementById('warnings-section').innerHTML = `
+            <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:12px;padding:20px;text-align:center">
+              <p style="color:var(--info);font-size:15px;margin-bottom:12px">📋 No health data yet — let's get started!</p>
+              <a href="health-input.html" class="btn btn-primary">Log Your First Health Data →</a>
+            </div>`;
+        }
+      }
+    }
+
+    function renderWarnings(summary) {
+      const bmi = summary.bmi;
+      const warnings = [];
+      if (bmi < 18.5) warnings.push({ level:'high', title:'⚠️ Underweight', msg:`BMI ${bmi} — below healthy range` });
+      if (bmi >= 30)  warnings.push({ level:'high', title:'🔴 Obese', msg:`BMI ${bmi} — high health risk` });
+      else if (bmi >= 25) warnings.push({ level:'moderate', title:'⚠️ Overweight', msg:`BMI ${bmi} — manage with diet & exercise` });
+      if (summary.blood_glucose_mmol >= 7.0) warnings.push({ level:'critical', title:'🔴 High Blood Glucose', msg:`${summary.blood_glucose_mmol} mmol/L — diabetic range` });
+      else if (summary.blood_glucose_mmol >= 5.6) warnings.push({ level:'high', title:'⚠️ Pre-Diabetic Glucose', msg:`${summary.blood_glucose_mmol} mmol/L — monitor closely` });
+      if (summary.cholesterol_mgdl >= 240) warnings.push({ level:'high', title:'🔴 High Cholesterol', msg:`${summary.cholesterol_mgdl} mg/dL — needs attention` });
+
+      const sec = document.getElementById('warnings-section');
+      if (!warnings.length) {
+        sec.innerHTML = '<div class="no-warnings"><span style="font-size:24px">✅</span><span>All health metrics are in normal range. Keep it up!</span></div>';
+      } else {
+        sec.innerHTML = warnings.map(w => `
+          <div class="alert alert-${w.level}" style="margin-bottom:10px">
+            <div class="alert-icon">${w.level==='critical'?'🚨':'⚠️'}</div>
+            <div><div class="alert-title">${w.title}</div><div class="alert-message">${w.msg}</div></div>
+            <a href="plan.html" class="btn btn-sm btn-primary" style="margin-left:auto;flex-shrink:0">Get Plan</a>
+          </div>`).join('');
+      }
+    }
+
+    async function loadStats() {
+      try {
+        const stats = await ProgressAPI.getStats();
+        document.getElementById('count-logs').textContent = stats.total_health_logs;
+        document.getElementById('count-plans').textContent = stats.total_plans_generated;
+        document.getElementById('count-reports').textContent = stats.total_weekly_reports;
+        document.getElementById('health-score').textContent = stats.latest_health_score ? `${stats.latest_health_score}/100` : 'N/A';
+      } catch {}
+    }
+
+    async function loadTrendData() {
+      try {
+        trendData = await ProgressAPI.getHealthTrend(30);
+        loadChart('weight');
+      } catch {}
+    }
+
+    function loadChart(type) {
+      if (!trendData) return;
+      if (trendChart) trendChart.destroy();
+
+      const ctx = document.getElementById('trend-chart').getContext('2d');
+      const isWeight = type === 'weight';
+      const data = isWeight ? trendData.weight_kg : trendData.glucose_mmol;
+      const label = isWeight ? 'Weight (kg)' : 'Glucose (mmol/L)';
+      const color = isWeight ? '#7c3aed' : '#06b6d4';
+
+      trendChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: trendData.labels,
+          datasets: [{ label, data, borderColor: color, backgroundColor: `${color}20`, tension: 0.4, fill: true, pointRadius: 4, pointBackgroundColor: color }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { ticks: { color: '#64748b', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+            y: { ticks: { color: '#64748b', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+          }
+        }
+      });
+    }
+
+    async function triggerWeeklyReport() {
+      showLoading('Generating weekly report...');
+      try {
+        await ProgressAPI.triggerWeeklyReport();
+        hideLoading();
+        showToast('Weekly report generation started! You\'ll receive an email soon.', 'success');
+      } catch (err) {
+        hideLoading();
+        showToast(err.message, 'error');
+      }
+    }
+
+    initDashboard();
+  </script>
+</body>
+</html>
