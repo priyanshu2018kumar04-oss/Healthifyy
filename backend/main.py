@@ -72,6 +72,8 @@ ALLOWED_ORIGINS = [
     "https://healthifyy-65xydnp3m-healthify1.vercel.app",
     "https://healthifyy-healthify1.vercel.app",
     "https://healthifyy.vercel.app",
+    # Render backend (for health checks)
+    "https://healthifyy-1healthifyy-backend.onrender.com",
 ]
 
 app.add_middleware(
