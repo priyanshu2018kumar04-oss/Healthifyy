@@ -3,7 +3,10 @@
  * Centralised fetch wrapper with JWT auth and error handling.
  */
 
-const API_BASE = 'http://localhost:8000/api';
+// Auto-detect environment: use Render backend in production, localhost in dev
+const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? 'http://localhost:8000/api'
+  : 'https://healthifyy-backend.onrender.com/api';
 
 function getToken() {
   return localStorage.getItem('healthify_token');
@@ -52,7 +55,7 @@ async function apiFetch(path, options = {}) {
   try {
     response = await fetch(`${API_BASE}${path}`, { ...options, headers });
   } catch (err) {
-    throw new Error('Cannot connect to Healthify server. Make sure the backend is running on port 8000.');
+    throw new Error('Cannot connect to Healthify server. Please try again later.');
   }
 
   if (response.status === 401) {
