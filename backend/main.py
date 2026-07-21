@@ -64,9 +64,19 @@ app = FastAPI(
 
 # ─── CORS ─────────────────────────────────────────────────────────────────────
 
+ALLOWED_ORIGINS = [
+    # Local development
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    # Vercel production deployments
+    "https://healthifyy-65xydnp3m-healthify1.vercel.app",
+    "https://healthifyy-healthify1.vercel.app",
+    "https://healthifyy.vercel.app",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # In production: restrict to your frontend domain
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
